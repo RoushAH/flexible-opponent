@@ -6,7 +6,7 @@ You play the physical game. The AI maintains a parallel digital state and tells 
 
 **Key principle:** The LLM never decides what is legal. It only decides what it *wants* to try. You are the final arbiter.
 
-Based upon research here: https://medium.com/@roush.adam.h/your-backup-lands-with-you-a-mars-architecture-that-might-actually-work-6f5585290835
+Based upon research here: [MEDIUM](https://medium.com/@roush.adam.h/chatgpt-can-start-agricola-but-it-sure-cant-finish-well-19f2728cffb4)
 
 ---
 
