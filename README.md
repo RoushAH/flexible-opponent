@@ -6,6 +6,8 @@ You play the physical game. The AI maintains a parallel digital state and tells 
 
 **Key principle:** The LLM never decides what is legal. It only decides what it *wants* to try. You are the final arbiter.
 
+Based upon research here: https://medium.com/@roush.adam.h/your-backup-lands-with-you-a-mars-architecture-that-might-actually-work-6f5585290835
+
 ---
 
 ## How to Use It
