@@ -163,6 +163,7 @@ class GameLoop:
 
         if not legal_actions.actions:
             # No legal actions - this might be a pass or game over
+            self.advance_turn()  # Still need to advance to human's turn
             return TurnResult(
                 player=self.ai_player,
                 action_id="pass",
@@ -218,6 +219,7 @@ class GameLoop:
 
         if decision is None:
             # All moves rejected or no valid moves
+            self.advance_turn()  # Still need to advance to human's turn
             return TurnResult(
                 player=self.ai_player,
                 action_id="pass",
