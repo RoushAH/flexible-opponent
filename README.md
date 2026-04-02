@@ -43,7 +43,7 @@ The CLI walks you through setup:
 1. **Game name** - e.g., "Agricola", "Catan", "Wingspan"
 2. **Your name** - defaults to "human"
 3. **Turn order** - who goes first
-4. **Rules** - provide a rulebook (PDF, images, or paste text)
+4. **Rules** - provide a rulebook (PDF, images, folder of files, or paste text)
 5. **Initial state** - optionally provide starting state as JSON
 
 ### Playing

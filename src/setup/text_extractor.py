@@ -294,6 +294,71 @@ async def extract_from_images(
     )
 
 
+async def extract_from_directory(
+    dir_path: Path,
+    client: LLMClient | None = None,
+    extract_pdf_images: bool = True,
+) -> ExtractedDocument:
+    """Extract text from all supported files in a directory.
+
+    Processes files in sorted order. Supports PDFs, text files, and images.
+
+    Args:
+        dir_path: Path to directory containing rulebook files.
+        client: LLM client (required for image extraction/analysis).
+        extract_pdf_images: If True and client provided, analyze images in PDFs.
+
+    Returns:
+        ExtractedDocument combining all files.
+    """
+    supported_extensions = {".pdf", ".txt", ".md", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+
+    # Find all supported files, sorted by name
+    files = sorted([
+        f for f in dir_path.iterdir()
+        if f.is_file() and f.suffix.lower() in supported_extensions
+    ])
+
+    if not files:
+        raise ValueError(f"No supported files found in {dir_path}")
+
+    print(f"  Found {len(files)} file(s) in directory")
+
+    all_pages = []
+    all_images = []
+    page_offset = 0
+
+    for file_path in files:
+        print(f"    Processing: {file_path.name}")
+
+        # Extract this file
+        doc = await extract_document(file_path, client, extract_pdf_images)
+
+        # Renumber pages with offset and add source file info
+        for page in doc.pages:
+            all_pages.append(ExtractedPage(
+                page_number=page_offset + page.page_number,
+                text=page.text,
+                source_file=str(file_path),
+                source_type=page.source_type,
+                images=page.images,
+            ))
+
+        # Collect images with updated page numbers
+        for img in doc.images:
+            img.page_number += page_offset
+            all_images.append(img)
+
+        page_offset += doc.total_pages
+
+    return ExtractedDocument(
+        pages=all_pages,
+        source_file=str(dir_path),
+        total_pages=len(all_pages),
+        images=all_images,
+    )
+
+
 async def extract_document(
     source: Path | str | list[Path],
     client: LLMClient | None = None,
@@ -333,10 +398,14 @@ async def extract_document(
             raise ValueError("LLM client required for image extraction")
         return await extract_from_images(source, client)
 
-    # Handle single file path
+    # Handle single file or directory path
     path = Path(source)
     if not path.exists():
         raise FileNotFoundError(f"File not found: {path}")
+
+    # Handle directory
+    if path.is_dir():
+        return await extract_from_directory(path, client, extract_pdf_images)
 
     suffix = path.suffix.lower()
 

@@ -73,8 +73,8 @@ class RulebookProcessor:
         # Determine source type
         source_type, source_files = self._analyze_source(source)
 
-        # Check if we need a client
-        if source_type == "images" and self.client is None:
+        # Check if we need a client (images or directories that may contain images)
+        if source_type in ("images", "directory") and self.client is None:
             raise ValueError("LLM client required for image processing")
 
         # Extract text
@@ -139,8 +139,18 @@ class RulebookProcessor:
         if isinstance(source, list):
             return "images", [str(p) for p in source]
 
-        # Single file
+        # Single file or directory
         path = Path(source)
+
+        # Directory of rulebook files
+        if path.is_dir():
+            supported = {".pdf", ".txt", ".md", ".png", ".jpg", ".jpeg", ".gif", ".webp"}
+            files = sorted([
+                str(f) for f in path.iterdir()
+                if f.is_file() and f.suffix.lower() in supported
+            ])
+            return "directory", files
+
         suffix = path.suffix.lower()
 
         if suffix == ".pdf":

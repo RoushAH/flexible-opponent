@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"from src.llm.client import create_client, ClaudeClient, Role, LLMResponse; from src.engine.state_manager import StateManager, create_session; from src.llm.rules_interpreter import RulesInterpreter, Action; from src.llm.strategist import Strategist, MoveDecision; from src.controller.game_loop import GameLoop; print\\(''All imports successful''\\)\")",
+      "Bash(python -c \"from src.setup.text_extractor import extract_document, extract_from_pdf; from src.setup.chunker import chunk_by_sections, RuleChunk; from src.engine.rules_index import RulesIndex, create_rules_index; from src.setup.rulebook_processor import RulebookProcessor, process_rulebook; print\\(''All rulebook imports successful''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python -c \"from src.setup.schema_generator import SchemaGenerator, generate_schema_interactive; from src.setup.board_initializer import BoardInitializer, initialize_board_interactive; print\\(''All setup module imports successful''\\)\")",
+      "Bash(python -c \"from src.setup.text_extractor import extract_document, extract_from_pdf_with_images, ExtractedImage; from src.setup.chunker import chunk_by_sections; print\\(''PDF image extraction imports successful''\\)\")",
+      "Bash(python -c \":*)",
+      "Bash(python -c \"from src.controller.cli import CLI, main; print\\(''CLI imports successful''\\)\")",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)"
+    ]
+  }
+}

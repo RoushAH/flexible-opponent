@@ -116,7 +116,7 @@ Each session in `games/<game_name>_<timestamp>/`:
 ### Complete
 - **Core Loop**: CLI, turn orchestration, state management, move logging
 - **LLM Roles**: Rules interpreter, AI strategist, referee (with validation retry)
-- **Rulebook Processing**: PDF (text + image extraction), images, plain text → RAG chunks
+- **Rulebook Processing**: PDF (text + image extraction), images, plain text, or directory of files → RAG chunks
 - **Setup Automation**: Schema generator, board initializer (photos), hidden dealer
 - **State Sync**: Diff reporting, `/state` command, photo-based recovery
 - **Game Management**: Session history, replay shortcuts (reuse rules_index)

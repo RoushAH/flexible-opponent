@@ -132,8 +132,9 @@ During play:
         self.print("\nRules setup:")
         self.print("Options:")
         self.print("  1. Enter path to rulebook file (PDF, .txt, or images)")
-        self.print("  2. Paste rules text (type 'END' on a new line when done)")
-        self.print("  3. Press Enter to skip")
+        self.print("  2. Enter path to folder containing all rulebook files")
+        self.print("  3. Paste rules text (type 'END' on a new line when done)")
+        self.print("  4. Press Enter to skip")
 
         rules_input = input("\nRulebook path or text: ").strip()
         rules_text = ""
