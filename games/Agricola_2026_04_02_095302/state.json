@@ -1,0 +1,8 @@
+{
+  "turn_order": [
+    "ai",
+    "human"
+  ],
+  "current_player": "human",
+  "turn": 1
+}

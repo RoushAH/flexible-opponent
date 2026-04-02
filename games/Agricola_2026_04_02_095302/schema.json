@@ -1,0 +1,351 @@
+{
+  "type": "object",
+  "properties": {
+    "phase": {
+      "type": "string",
+      "enum": [
+        "work_phase",
+        "returning_home",
+        "harvest",
+        "game_end"
+      ]
+    },
+    "round": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 14
+    },
+    "current_player": {
+      "type": "string"
+    },
+    "turn_order": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "players": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "resources": {
+            "type": "object",
+            "properties": {
+              "wood": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "clay": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "stone": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "reed": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "grain": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "vegetables": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "food": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "livestock": {
+            "type": "object",
+            "properties": {
+              "sheep": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "wild_boar": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "cattle": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "farm": {
+            "type": "object",
+            "properties": {
+              "rooms": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "material": {
+                      "type": "string",
+                      "enum": [
+                        "wood",
+                        "clay",
+                        "stone"
+                      ]
+                    },
+                    "position": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "position": {
+                      "type": "string"
+                    },
+                    "sown": {
+                      "type": "boolean"
+                    },
+                    "crop_type": {
+                      "type": "string",
+                      "enum": [
+                        "grain",
+                        "vegetables",
+                        null
+                      ]
+                    }
+                  }
+                }
+              },
+              "pastures": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "positions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "fenced": {
+                      "type": "boolean"
+                    },
+                    "stables": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "capacity": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "animals": {
+                      "type": "object",
+                      "properties": {
+                        "sheep": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "wild_boar": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "cattle": {
+                          "type": "integer",
+                          "minimum": 0
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "fences": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          },
+          "family_members": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "placed": {
+                  "type": "boolean"
+                },
+                "action_space": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "cards": {
+            "type": "object",
+            "properties": {
+              "occupations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "played": {
+                      "type": "boolean"
+                    },
+                    "cost": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "minor_improvements": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "played": {
+                      "type": "boolean"
+                    },
+                    "cost": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "major_improvements": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "cost": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "begging_cards": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "board": {
+      "type": "object",
+      "properties": {
+        "action_spaces": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "occupied_by": {
+                "type": "string"
+              },
+              "accumulated_resources": {
+                "type": "object"
+              },
+              "round_activated": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "major_improvements": {
+          "type": "object",
+          "properties": {
+            "fireplace": {
+              "type": "boolean"
+            },
+            "cooking_hearth": {
+              "type": "boolean"
+            },
+            "well": {
+              "type": "boolean"
+            },
+            "clay_oven": {
+              "type": "boolean"
+            },
+            "stone_oven": {
+              "type": "boolean"
+            },
+            "joinery": {
+              "type": "boolean"
+            },
+            "pottery": {
+              "type": "boolean"
+            },
+            "basketmaker": {
+              "type": "boolean"
+            }
+          }
+        },
+        "round_cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "round": {
+                "type": "integer"
+              },
+              "action_name": {
+                "type": "string"
+              },
+              "activated": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "harvest_tracking": {
+      "type": "object",
+      "properties": {
+        "harvest_rounds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "next_harvest": {
+          "type": "integer"
+        }
+      }
+    },
+    "game_end": {
+      "type": "object",
+      "properties": {
+        "triggered": {
+          "type": "boolean"
+        },
+        "final_scores": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}

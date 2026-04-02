@@ -1,0 +1,19 @@
+{
+  "hand": [
+    "occupations: Baker",
+    "Carpenter",
+    "Field Warden",
+    "Basketmaker",
+    "Clay Mixer",
+    "Stone Carrier",
+    "Chief.minor improvements -- Clay Oven",
+    "Fireplace",
+    "Cooking Hearth",
+    "Well",
+    "Pottery",
+    "Joinery",
+    "Writing Desk"
+  ],
+  "dealt_by": "referee",
+  "dealing_method": "random"
+}
