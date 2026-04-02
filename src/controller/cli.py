@@ -254,6 +254,10 @@ During play:
 
         self.state_manager.save_state(initial_state)
 
+        # Check if game has hidden state (cards dealt to players)
+        if self.rules_index or rules_text:
+            await self._setup_hidden_state(client, game_name, human_name, rules_text)
+
         # Initialize AI strategy
         self.print("\nInitializing AI strategy...")
         try:
@@ -277,6 +281,79 @@ During play:
         self.print("Type /help for commands\n")
 
         return True
+
+    async def _setup_hidden_state(
+        self,
+        client,
+        game_name: str,
+        human_name: str,
+        rules_text: str | None,
+    ) -> None:
+        """Check if game has hidden state and set it up.
+
+        Args:
+            client: LLM client.
+            game_name: Name of the game.
+            human_name: Human player's name.
+            rules_text: Rules text for context.
+        """
+        # First, ask LLM if this game has hidden cards dealt at setup
+        check_prompt = f"""Does the game "{game_name}" involve dealing hidden cards, tiles, or other secret items to players at the start of the game?
+
+Rules context:
+{(rules_text or "")[:2000]}
+
+Answer with ONLY "yes" or "no"."""
+
+        try:
+            response = await client.complete(
+                system_prompt="Answer only yes or no.",
+                user_prompt=check_prompt,
+                temperature=0.1,
+                max_tokens=10,
+            )
+
+            has_hidden = response.content.strip().lower().startswith("y")
+
+            if not has_hidden:
+                return  # No hidden state needed
+
+            # Game has hidden state - ask human what they have
+            self.print("\n=== Hidden Cards/Items Setup ===")
+            self.print("This game involves hidden cards or items dealt at the start.")
+            self.print(f"\n{human_name}, what cards/items were you dealt?")
+            self.print("(Enter comma-separated list, or press Enter if none)")
+
+            human_input = input("> ").strip()
+
+            if not human_input:
+                self.print("No hidden items recorded.")
+                return
+
+            # Parse human's items
+            human_items = [item.strip() for item in human_input.split(",")]
+            human_hidden = {"hand": human_items}
+
+            self.print(f"\nRecorded {len(human_items)} item(s) for {human_name}.")
+
+            # Deal to AI
+            self.print("Dealing hidden items to AI based on rules...")
+
+            from ..setup.hidden_dealer import HiddenDealer
+
+            dealer = HiddenDealer(client, game_name, self.rules_index)
+            result = await dealer.deal_hidden_state(human_hidden, rules_text=rules_text)
+
+            self.print(f"  {result.dealing_notes}")
+            self.print(f"  AI received {len(result.ai_hidden.get('hand', []))} item(s)")
+
+            # Save hidden states
+            self.state_manager.save_hidden_ai(result.ai_hidden)
+            if self.game_loop:
+                self.game_loop.set_human_hidden(result.human_hidden)
+
+        except Exception as e:
+            self.print(f"Hidden state setup skipped: {e}")
 
     async def run_game(self) -> None:
         """Run the main game loop."""
