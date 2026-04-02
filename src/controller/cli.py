@@ -231,7 +231,9 @@ During play:
                 response = input("(yes/no/describe changes) [yes]: ").strip().lower()
 
                 if response in ("", "yes", "y"):
-                    initial_state = proposal.example_state
+                    initial_state = self._normalize_player_names(
+                        proposal.example_state, human_name, ai_name
+                    )
                     self.state_manager.save_schema(proposal.schema)
                     self.print("Initial state accepted")
                 elif response in ("no", "n"):
@@ -244,7 +246,9 @@ During play:
                         response,
                         rules_text,
                     )
-                    initial_state = refined.example_state
+                    initial_state = self._normalize_player_names(
+                        refined.example_state, human_name, ai_name
+                    )
                     self.state_manager.save_schema(refined.schema)
                     self.print("Refined state applied")
 
@@ -281,6 +285,47 @@ During play:
         self.print("Type /help for commands\n")
 
         return True
+
+    def _normalize_player_names(
+        self,
+        state: dict,
+        human_name: str,
+        ai_name: str,
+    ) -> dict:
+        """Replace generic player names with actual names.
+
+        Schema generator often uses 'player1'/'player2' - replace with real names.
+        """
+        import copy
+        state = copy.deepcopy(state)
+
+        # Map generic names to actual names
+        name_map = {
+            "player1": human_name,
+            "player2": ai_name,
+            "Player1": human_name,
+            "Player2": ai_name,
+            "Player 1": human_name,
+            "Player 2": ai_name,
+        }
+
+        def replace_in_obj(obj):
+            if isinstance(obj, dict):
+                new_dict = {}
+                for k, v in obj.items():
+                    # Replace key if it's a player name
+                    new_key = name_map.get(k, k)
+                    new_dict[new_key] = replace_in_obj(v)
+                return new_dict
+            elif isinstance(obj, list):
+                return [replace_in_obj(item) for item in obj]
+            elif isinstance(obj, str):
+                # Replace string values that are player names
+                return name_map.get(obj, obj)
+            else:
+                return obj
+
+        return replace_in_obj(state)
 
     async def _setup_hidden_state(
         self,
