@@ -28,16 +28,17 @@ HUMAN PLAYER HAS THESE ITEMS:
 FULL POOL/DECK:
 {full_pool}
 
-Deal items to the AI player. If random dealing, select from items NOT in human's hand.
-Match the number of items the human has.
+Deal items to the AI player:
+- Match the STRUCTURE of human's hand (same number of each card type)
+- If human has 7 occupations and 7 minor improvements, AI gets 7 of each too
+- Select thematically appropriate cards that exist in the game
+- Do NOT duplicate cards the human has
 
 RESPOND WITH ONLY THIS JSON (no other text):
 {{
-  "ai_items": ["item1", "item2", "item3"],
+  "ai_items": ["Occupation: Card1", "Occupation: Card2", "Minor Improvement: Card3"],
   "dealing_method": "random",
-  "items_per_player": 7,
-  "remaining_pool": [],
-  "notes": "brief note"
+  "notes": "brief note about what was dealt"
 }}"""
 
 

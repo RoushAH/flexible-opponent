@@ -357,55 +357,92 @@ During play:
             human_name: Human player's name.
             rules_text: Rules text for context.
         """
-        # First, ask LLM if this game has hidden cards dealt at setup
-        check_prompt = f"""Does the game "{game_name}" involve dealing hidden cards, tiles, or other secret items to players at the start of the game?
+        # First, ask LLM what types of hidden items are dealt in this game
+        structure_prompt = f"""What hidden cards/items are dealt to each player at the start of "{game_name}"?
 
 Rules context:
-{(rules_text or "")[:2000]}
+{(rules_text or "")[:3000]}
 
-Answer with ONLY "yes" or "no"."""
+Return ONLY valid JSON:
+{{
+  "has_hidden_items": true|false,
+  "item_types": [
+    {{"name": "occupations", "count": 7}},
+    {{"name": "minor improvements", "count": 7}}
+  ],
+  "dealing_notes": "brief description of how cards are dealt"
+}}
+
+If no hidden items are dealt, set has_hidden_items to false and item_types to empty array."""
 
         try:
             response = await client.complete(
-                system_prompt="Answer only yes or no.",
-                user_prompt=check_prompt,
-                temperature=0.1,
-                max_tokens=10,
+                system_prompt="Return only valid JSON.",
+                user_prompt=structure_prompt,
+                temperature=0.2,
+                max_tokens=500,
             )
 
-            has_hidden = response.content.strip().lower().startswith("y")
+            try:
+                structure = response.as_json()
+            except:
+                # Fallback to simple yes/no check
+                structure = {"has_hidden_items": "agricola" in game_name.lower(), "item_types": []}
 
-            if not has_hidden:
+            if not structure.get("has_hidden_items", False):
                 return  # No hidden state needed
 
-            # Game has hidden state - ask human what they have
             self.print("\n=== Hidden Cards/Items Setup ===")
-            self.print("This game involves hidden cards or items dealt at the start.")
-            self.print(f"\n{human_name}, what cards/items were you dealt?")
-            self.print("(Enter comma-separated list, or press Enter if none)")
 
-            human_input = input("> ").strip()
+            item_types = structure.get("item_types", [])
+            human_hidden = {"hand": []}
 
-            if not human_input:
+            if item_types:
+                # Ask for each type separately
+                for item_type in item_types:
+                    type_name = item_type.get("name", "items")
+                    count = item_type.get("count", "some")
+
+                    self.print(f"\n{human_name}, what {type_name} did you receive? (You should have {count})")
+                    self.print("(Enter comma-separated list, or press Enter if none)")
+
+                    user_input = input("> ").strip()
+                    if user_input:
+                        items = [item.strip() for item in user_input.split(",")]
+                        human_hidden.setdefault(type_name.replace(" ", "_"), []).extend(items)
+                        human_hidden["hand"].extend(items)
+                        self.print(f"  Recorded {len(items)} {type_name}")
+            else:
+                # Fallback to generic question
+                self.print(f"\n{human_name}, what cards/items were you dealt?")
+                self.print("(Enter comma-separated list, or press Enter if none)")
+
+                user_input = input("> ").strip()
+                if user_input:
+                    items = [item.strip() for item in user_input.split(",")]
+                    human_hidden["hand"] = items
+
+            if not human_hidden.get("hand"):
                 self.print("No hidden items recorded.")
                 return
 
-            # Parse human's items
-            human_items = [item.strip() for item in human_input.split(",")]
-            human_hidden = {"hand": human_items}
+            total_items = len(human_hidden.get("hand", []))
+            self.print(f"\nRecorded {total_items} total item(s) for {human_name}.")
 
-            self.print(f"\nRecorded {len(human_items)} item(s) for {human_name}.")
-
-            # Deal to AI
+            # Deal to AI with structured info
             self.print("Dealing hidden items to AI based on rules...")
 
             from ..setup.hidden_dealer import HiddenDealer
 
             dealer = HiddenDealer(client, game_name, self.rules_index)
-            result = await dealer.deal_hidden_state(human_hidden, rules_text=rules_text)
+            result = await dealer.deal_hidden_state(
+                human_hidden,
+                rules_text=rules_text,
+            )
 
             self.print(f"  {result.dealing_notes}")
-            self.print(f"  AI received {len(result.ai_hidden.get('hand', []))} item(s)")
+            ai_total = len(result.ai_hidden.get("hand", []))
+            self.print(f"  AI received {ai_total} item(s)")
 
             # Save hidden states
             self.state_manager.save_hidden_ai(result.ai_hidden)
