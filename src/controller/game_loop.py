@@ -7,6 +7,8 @@ from typing import Callable
 
 from ..engine.state_manager import MoveLogEntry, StateManager, StateDiff
 from ..llm.client import LLMClient
+from ..llm.move_interpreter import InterpretedMove, MoveInterpreter
+from ..llm.phase_tracker import PhaseChange, PhaseTracker
 from ..llm.referee import Referee, ValidationResult
 from ..llm.rules_interpreter import LegalActionsResult, RulesInterpreter
 from ..llm.strategist import MoveDecision, Strategist
@@ -53,6 +55,8 @@ class GameLoop:
         self.rules_interpreter = RulesInterpreter(client, game_name)
         self.strategist = Strategist(client, game_name)
         self.referee = Referee(client, game_name)
+        self.move_interpreter = MoveInterpreter(client, game_name)
+        self.phase_tracker = PhaseTracker(client, game_name)
 
         self._current_player_idx = 0
         self._turn_number = 1
@@ -81,11 +85,15 @@ class GameLoop:
         self.rules_interpreter = RulesInterpreter(client, self.game_name)
         self.strategist = Strategist(client, self.game_name)
         self.referee = Referee(client, self.game_name)
+        self.move_interpreter = MoveInterpreter(client, self.game_name)
+        self.phase_tracker = PhaseTracker(client, self.game_name)
 
         # Re-set rules index if we have one
         if hasattr(self, '_rules_index') and self._rules_index:
             self.rules_interpreter.set_rules_index(self._rules_index)
             self.referee.rules_index = self._rules_index
+            self.move_interpreter.set_rules_index(self._rules_index)
+            self.phase_tracker.set_rules_index(self._rules_index)
 
     def set_rules(self, rules_text: str) -> None:
         """Set the rules text for the game.
@@ -104,6 +112,8 @@ class GameLoop:
         self._rules_index = rules_index  # Store for set_client
         self.rules_interpreter.set_rules_index(rules_index)
         self.referee.rules_index = rules_index
+        self.move_interpreter.set_rules_index(rules_index)
+        self.phase_tracker.set_rules_index(rules_index)
 
     def set_human_hidden(self, hidden: dict) -> None:
         """Set the human's hidden state for the referee.
@@ -324,6 +334,105 @@ class GameLoop:
             reasoning=None,
             state_diff=state_diff,
         )
+
+    async def interpret_and_process_human_move(
+        self,
+        player: str,
+        description: str,
+    ) -> tuple[TurnResult, InterpretedMove]:
+        """Interpret a human move and process it with extracted state updates.
+
+        Uses LLM to understand the move description and extract state changes.
+
+        Args:
+            player: Name of the player making the move.
+            description: Natural language description of the move.
+
+        Returns:
+            Tuple of (TurnResult, InterpretedMove).
+        """
+        # Load current state for interpretation
+        current_state = self.state_manager.get_state()
+
+        # Interpret the move
+        interpreted = await self.move_interpreter.interpret_move(
+            player=player,
+            move_description=description,
+            current_state=current_state,
+        )
+
+        # Apply as delta updates (numbers are added/subtracted)
+        if interpreted.state_updates:
+            new_state = self.move_interpreter.apply_delta_updates(
+                current_state, interpreted.state_updates
+            )
+        else:
+            new_state = current_state
+
+        state_diff = self.state_manager.save_state(new_state)
+
+        # Log the move
+        self.state_manager.append_move(
+            MoveLogEntry(
+                turn=self._turn_number,
+                player=player,
+                action_id=interpreted.action_id,
+                description=description,
+                timestamp=datetime.now().isoformat(),
+                reasoning=interpreted.interpretation,
+            )
+        )
+
+        # Advance turn
+        self.advance_turn()
+
+        result = TurnResult(
+            player=player,
+            action_id=interpreted.action_id,
+            description=description,
+            reasoning=interpreted.interpretation,
+            state_diff=state_diff,
+        )
+
+        return result, interpreted
+
+    async def check_phase_change(
+        self,
+        player: str,
+        action: str,
+    ) -> PhaseChange | None:
+        """Check if a move triggers a phase/round change.
+
+        Args:
+            player: Player who just moved.
+            action: Description of the action.
+
+        Returns:
+            PhaseChange if transition detected, None otherwise.
+        """
+        current_state = self.state_manager.get_state()
+        recent_moves = self.state_manager.load_moves(last_n=10)
+        recent_moves_dicts = [
+            {"player": m.player, "description": m.description}
+            for m in recent_moves
+        ]
+
+        return await self.phase_tracker.check_phase_change(
+            player=player,
+            action=action,
+            current_state=current_state,
+            recent_moves=recent_moves_dicts,
+        )
+
+    def apply_phase_effects(self, phase_change: PhaseChange) -> None:
+        """Apply phase change effects to state.
+
+        Args:
+            phase_change: The phase change to apply.
+        """
+        current_state = self.state_manager.get_state()
+        new_state = self.phase_tracker.apply_phase_effects(current_state, phase_change)
+        self.state_manager.save_state(new_state)
 
     def _apply_action(self, state: dict, decision: MoveDecision) -> dict:
         """Apply an action to the state.

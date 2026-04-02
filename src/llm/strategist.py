@@ -1,6 +1,7 @@
 """AI Strategist - picks the best move and manages strategy."""
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -115,11 +116,21 @@ class Strategist:
         )
 
         # Parse response
+        data = None
         try:
             data = response.as_json()
         except json.JSONDecodeError:
+            # Try to extract JSON from response if LLM added text around it
+            json_match = re.search(r'\{[\s\S]*\}', response.content)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    pass
+
+        if data is None:
             # Fallback: pick the first high-confidence action
-            return self._fallback_decision(legal_actions)
+            return self._fallback_decision(legal_actions, response.content[:200])
 
         # Find the chosen action
         action_id = data.get("chosen_action_id", "")
@@ -127,7 +138,9 @@ class Strategist:
 
         if chosen_action is None:
             # Action ID not found, try to match by description or fall back
-            return self._fallback_decision(legal_actions)
+            return self._fallback_decision(
+                legal_actions, f"action_id '{action_id}' not found in legal actions"
+            )
 
         # Parse strategy update
         update_data = data.get("strategy_update", {})
@@ -145,17 +158,21 @@ class Strategist:
             concerns=data.get("concerns", []),
         )
 
-    def _fallback_decision(self, legal_actions: LegalActionsResult) -> MoveDecision:
+    def _fallback_decision(
+        self, legal_actions: LegalActionsResult, error_preview: str = ""
+    ) -> MoveDecision:
         """Make a fallback decision when LLM fails.
 
         Picks the first high-confidence action, or just the first action.
         """
+        error_note = f" (response: {error_preview}...)" if error_preview else ""
+
         # Try to find a high-confidence action
         for action in legal_actions.actions:
             if action.confidence == "high":
                 return MoveDecision(
                     chosen_action=action,
-                    reasoning="Fallback: chose first high-confidence action due to parsing error",
+                    reasoning=f"Fallback: chose first high-confidence action due to parsing error{error_note}",
                     strategy_status="continue",
                     strategy_update=StrategyUpdate(),
                     concerns=["LLM response could not be parsed"],
@@ -164,7 +181,7 @@ class Strategist:
         # Just pick the first action
         return MoveDecision(
             chosen_action=legal_actions.actions[0],
-            reasoning="Fallback: chose first available action due to parsing error",
+            reasoning=f"Fallback: chose first available action due to parsing error{error_note}",
             strategy_status="continue",
             strategy_update=StrategyUpdate(),
             concerns=["LLM response could not be parsed"],

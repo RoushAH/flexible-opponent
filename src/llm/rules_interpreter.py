@@ -1,6 +1,7 @@
 """Rules Interpreter - lists plausible legal actions."""
 
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -187,13 +188,23 @@ class RulesInterpreter:
         )
 
         # Parse response
+        data = None
         try:
             data = response.as_json()
-        except json.JSONDecodeError as e:
+        except json.JSONDecodeError:
+            # Try to extract JSON from response if LLM added text around it
+            json_match = re.search(r'\{[\s\S]*\}', response.content)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    pass
+
+        if data is None:
             # If parsing fails, return empty result with error
             return LegalActionsResult(
                 actions=[],
-                phase_note=f"Error parsing response: {e}",
+                phase_note="Error parsing response",
                 ambiguities=[f"LLM response was not valid JSON: {response.content[:200]}"],
             )
 

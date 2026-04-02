@@ -474,6 +474,16 @@ If no hidden items are dealt, set has_hidden_items to false and item_types to em
                         self.print(f"Reasoning: {result.reasoning}")
                     if not result.state_diff.is_empty():
                         self.print(f"\n{result.state_diff.to_human_readable()}")
+
+                    # Check for phase/round changes after AI turn
+                    phase_change = await self.game_loop.check_phase_change(
+                        player=current,
+                        action=result.description,
+                    )
+                    if phase_change:
+                        self.print(f"\n{self.game_loop.phase_tracker.format_phase_summary(phase_change)}")
+                        self.game_loop.apply_phase_effects(phase_change)
+
                     self.print_separator()
 
                 except Exception as e:
@@ -502,13 +512,38 @@ If no hidden items are dealt, set has_hidden_items to false and item_types to em
                     await self.handle_command(user_input)
                     continue
 
-                # Process as a move
-                self.game_loop.process_human_move(
+                # Process as a move - interpret with LLM to extract state changes
+                self.print("Interpreting move...")
+                result, interpreted = await self.game_loop.interpret_and_process_human_move(
                     player=current,
-                    action_id="human_move",
                     description=user_input,
                 )
-                self.print("Move recorded.")
+                self.print(f"Move recorded. ({interpreted.confidence} confidence)")
+                if not result.state_diff.is_empty():
+                    self.print(f"{result.state_diff.to_human_readable()}")
+
+                # Check for phase/round changes after human turn
+                phase_change = await self.game_loop.check_phase_change(
+                    player=current,
+                    action=user_input,
+                )
+                if phase_change:
+                    self.print(f"\n{self.game_loop.phase_tracker.format_phase_summary(phase_change)}")
+                    self.print(f"\n{phase_change.confirmation_prompt}")
+                    confirm = input("(y/n or describe corrections): ").strip().lower()
+                    if confirm == "y" or confirm == "yes":
+                        self.game_loop.apply_phase_effects(phase_change)
+                        self.print("Phase effects applied.")
+                    elif confirm == "n" or confirm == "no":
+                        self.print("Phase effects skipped. Use /state to verify current state.")
+                    else:
+                        # User provided corrections - interpret and apply
+                        self.print("Interpreting corrections...")
+                        _, _ = await self.game_loop.interpret_and_process_human_move(
+                            player="system",
+                            description=f"Correction: {confirm}",
+                        )
+                        self.print("Corrections applied.")
 
         self.print("\nGame ended.")
 
