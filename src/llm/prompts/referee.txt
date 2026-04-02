@@ -22,11 +22,12 @@ Action: {action_id}
 Description: {action_description}
 
 Validate this move. Check:
-1. Is it this player's turn?
-2. Does the player have the required resources/cards/pieces?
-3. Are all prerequisites met?
-4. Does the action exist and is it available this phase?
-5. Are there any rule violations?
+1. Does the player have the required resources/cards/pieces?
+2. Are all prerequisites met?
+3. Does the action exist and is it available this phase?
+4. Are there any rule violations?
+
+NOTE: Do NOT check turn order - the game system handles that. Assume it IS this player's turn.
 
 Return ONLY valid JSON:
 {{
