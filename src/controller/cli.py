@@ -200,22 +200,59 @@ During play:
         else:
             self.print("No rules provided - AI will play without rule knowledge")
 
-        # Get initial state
-        self.print("\nInitial state setup:")
-        self.print("Enter initial game state as JSON (or press Enter to skip):")
-        state_input = input().strip()
+        # Generate initial state from rules
+        self.print("\nGenerating initial game state from rules...")
+        initial_state = {"phase": "setup", "turn": 1, "players": {human_name: {}, ai_name: {}}}
 
-        if state_input:
+        if self.rules_index or rules_text:
             try:
-                initial_state = json.loads(state_input)
-                self.state_manager.save_state(initial_state)
-                self.print("Initial state loaded")
-            except json.JSONDecodeError as e:
-                self.print(f"Invalid JSON: {e}")
-                self.print("Starting with empty state")
-                self.state_manager.save_state({})
-        else:
-            self.state_manager.save_state({"phase": "setup", "turn": 1})
+                from ..setup.schema_generator import SchemaGenerator
+
+                generator = SchemaGenerator(client, game_name)
+                proposal = await generator.propose_schema(
+                    rules_index=self.rules_index,
+                    rules_text=rules_text,
+                )
+
+                # Show what we generated
+                self.print("\n=== Proposed Initial State ===")
+                self.print(proposal.description)
+                self.print("\nTracking: " + ", ".join(proposal.tracked_elements[:5]))
+                self.print(f"\nInitial state preview:")
+                preview = json.dumps(proposal.example_state, indent=2)
+                # Show truncated preview
+                if len(preview) > 500:
+                    self.print(preview[:500] + "\n  ...")
+                else:
+                    self.print(preview)
+
+                # Ask for confirmation
+                self.print("\nDoes this look correct?")
+                response = input("(yes/no/describe changes) [yes]: ").strip().lower()
+
+                if response in ("", "yes", "y"):
+                    initial_state = proposal.example_state
+                    self.state_manager.save_schema(proposal.schema)
+                    self.print("Initial state accepted")
+                elif response in ("no", "n"):
+                    self.print("Using minimal state - you can correct it during play")
+                else:
+                    # Treat as feedback, refine
+                    self.print("Refining based on your feedback...")
+                    refined = await generator.refine_schema(
+                        proposal.schema,
+                        response,
+                        rules_text,
+                    )
+                    initial_state = refined.example_state
+                    self.state_manager.save_schema(refined.schema)
+                    self.print("Refined state applied")
+
+            except Exception as e:
+                self.print(f"State generation failed: {e}")
+                self.print("Using minimal initial state")
+
+        self.state_manager.save_state(initial_state)
 
         # Initialize AI strategy
         self.print("\nInitializing AI strategy...")
