@@ -1,0 +1,15 @@
+{
+  "current_priorities": [
+    "secure grain production",
+    "obtain baking improvement",
+    "collect basic resources (wood/clay)"
+  ],
+  "blocked_goals": [],
+  "turn_focus": "establish food engine and basic infrastructure",
+  "strategy_status": "continue",
+  "fallbacks": {
+    "if_grain_contested": "pivot to vegetable farming and cooking hearth",
+    "if_resources_scarce": "prioritize resource accumulation actions",
+    "if_family_growth_available": "take family growth if food secure"
+  }
+}

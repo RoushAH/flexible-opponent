@@ -56,7 +56,7 @@ class GameLoop:
 
         self._current_player_idx = 0
         self._turn_number = 1
-        self._rules_text = ""  # Loaded during setup
+        self._rules_text = None  # None = use RAG; set via set_rules() for direct text
         self._game_active = True
         self._validation_enabled = True
         self._max_retries = 3  # Max retries if move is invalid

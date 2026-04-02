@@ -156,8 +156,8 @@ During play:
                     self.rules_index = result.index
                     self.print(result.summary())
 
-                    # Set rules index on rules interpreter
-                    self.game_loop.rules_interpreter.set_rules_index(self.rules_index)
+                    # Set rules index on game loop (propagates to interpreter + referee)
+                    self.game_loop.set_rules_index(self.rules_index)
 
                     # Get full text for strategy init
                     rules_text = result.index.get_all_chunks()
@@ -192,7 +192,7 @@ During play:
                         )
                         result = await processor.process(rules_text)
                         self.rules_index = result.index
-                        self.game_loop.rules_interpreter.set_rules_index(self.rules_index)
+                        self.game_loop.set_rules_index(self.rules_index)
                         self.print(f"Indexed {result.chunk_count} rule chunks")
                     except Exception as e:
                         self.print(f"Indexing failed: {e}, using raw text")
