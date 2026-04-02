@@ -214,12 +214,17 @@ During play:
                     rules_text=rules_text,
                 )
 
+                # Normalize player names before showing preview
+                normalized_state = self._normalize_player_names(
+                    proposal.example_state, human_name, ai_name
+                )
+
                 # Show what we generated
                 self.print("\n=== Proposed Initial State ===")
                 self.print(proposal.description)
                 self.print("\nTracking: " + ", ".join(proposal.tracked_elements[:5]))
                 self.print(f"\nInitial state preview:")
-                preview = json.dumps(proposal.example_state, indent=2)
+                preview = json.dumps(normalized_state, indent=2)
                 # Show truncated preview
                 if len(preview) > 500:
                     self.print(preview[:500] + "\n  ...")
@@ -231,9 +236,7 @@ During play:
                 response = input("(yes/no/describe changes) [yes]: ").strip().lower()
 
                 if response in ("", "yes", "y"):
-                    initial_state = self._normalize_player_names(
-                        proposal.example_state, human_name, ai_name
-                    )
+                    initial_state = normalized_state
                     self.state_manager.save_schema(proposal.schema)
                     self.print("Initial state accepted")
                 elif response in ("no", "n"):
