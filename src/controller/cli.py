@@ -283,6 +283,9 @@ During play:
             self.print(f"Strategy init failed: {e}")
             # Use defaults
 
+        # Sync state with game loop's turn order
+        self.game_loop.sync_state_with_turn()
+
         self.print_separator()
         self.print(f"\nGame ready! {player_order[0]} goes first.")
         self.print("Type /help for commands\n")

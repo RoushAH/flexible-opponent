@@ -127,6 +127,19 @@ class GameLoop:
         if self._current_player_idx == 0:
             self._turn_number += 1
 
+        # Keep state in sync with game loop
+        state = self.state_manager.get_state()
+        state["current_player"] = self.current_player
+        state["turn"] = self._turn_number
+        self.state_manager.save_state(state)
+
+    def sync_state_with_turn(self) -> None:
+        """Ensure state's current_player matches game loop. Call at game start."""
+        state = self.state_manager.get_state()
+        state["current_player"] = self.current_player
+        state["turn_order"] = self.player_order
+        self.state_manager.save_state(state)
+
     async def execute_ai_turn(self) -> TurnResult:
         """Execute the AI's turn.
 

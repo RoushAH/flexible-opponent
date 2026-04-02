@@ -1,0 +1,285 @@
+{
+  "phase": "work",
+  "round": 1,
+  "current_player": "human",
+  "turn_order": [
+    "human",
+    "ai"
+  ],
+  "players": {
+    "human": {
+      "resources": {
+        "wood": 0,
+        "clay": 0,
+        "stone": 0,
+        "reed": 0,
+        "grain": 0,
+        "vegetables": 0,
+        "food": 2
+      },
+      "livestock": {
+        "sheep": 0,
+        "wild_boar": 0,
+        "cattle": 0
+      },
+      "farm": {
+        "rooms": [
+          {
+            "material": "wood",
+            "position": "A1"
+          },
+          {
+            "material": "wood",
+            "position": "A2"
+          }
+        ],
+        "fields": [],
+        "pastures": [],
+        "fences": [],
+        "stables": []
+      },
+      "family_members": [
+        {
+          "id": "fm1",
+          "placed": false,
+          "action_space": ""
+        },
+        {
+          "id": "fm2",
+          "placed": false,
+          "action_space": ""
+        }
+      ],
+      "cards": {
+        "occupations": [
+          {
+            "id": "occ1",
+            "name": "Farmer",
+            "played": false,
+            "cost": 1
+          }
+        ],
+        "minor_improvements": [
+          {
+            "id": "mi1",
+            "name": "Clay Pipe",
+            "played": false,
+            "cost": {
+              "clay": 1
+            }
+          }
+        ]
+      },
+      "major_improvements": [],
+      "begging_cards": 0
+    },
+    "ai": {
+      "resources": {
+        "wood": 0,
+        "clay": 0,
+        "stone": 0,
+        "reed": 0,
+        "grain": 0,
+        "vegetables": 0,
+        "food": 2
+      },
+      "livestock": {
+        "sheep": 0,
+        "wild_boar": 0,
+        "cattle": 0
+      },
+      "farm": {
+        "rooms": [
+          {
+            "material": "wood",
+            "position": "A1"
+          },
+          {
+            "material": "wood",
+            "position": "A2"
+          }
+        ],
+        "fields": [],
+        "pastures": [],
+        "fences": [],
+        "stables": []
+      },
+      "family_members": [
+        {
+          "id": "fm1",
+          "placed": false,
+          "action_space": ""
+        },
+        {
+          "id": "fm2",
+          "placed": false,
+          "action_space": ""
+        }
+      ],
+      "cards": {
+        "occupations": [
+          {
+            "id": "occ2",
+            "name": "Carpenter",
+            "played": false,
+            "cost": 2
+          }
+        ],
+        "minor_improvements": [
+          {
+            "id": "mi2",
+            "name": "Fishing Rod",
+            "played": false,
+            "cost": {
+              "wood": 2
+            }
+          }
+        ]
+      },
+      "major_improvements": [],
+      "begging_cards": 0
+    }
+  },
+  "board": {
+    "action_spaces": {
+      "build_rooms_and_stables": {
+        "name": "Build Rooms and/or Stables",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {},
+        "available_from_round": 1
+      },
+      "starting_player": {
+        "name": "Starting Player and/or Minor Improvement",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "food": 1
+        },
+        "available_from_round": 1
+      },
+      "grain_seeds": {
+        "name": "Take 1 Grain",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "grain": 1
+        },
+        "available_from_round": 1
+      },
+      "plow_field": {
+        "name": "Plow 1 Field",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {},
+        "available_from_round": 1
+      },
+      "occupation": {
+        "name": "Occupation",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {},
+        "available_from_round": 1
+      },
+      "day_laborer": {
+        "name": "Day Laborer",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "food": 2
+        },
+        "available_from_round": 1
+      },
+      "wood": {
+        "name": "3 Wood",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "wood": 3
+        },
+        "available_from_round": 1
+      },
+      "clay": {
+        "name": "1 Clay",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "clay": 1
+        },
+        "available_from_round": 1
+      },
+      "reed": {
+        "name": "1 Reed",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "reed": 1
+        },
+        "available_from_round": 1
+      },
+      "fishing": {
+        "name": "Fishing",
+        "occupied": false,
+        "occupied_by": "",
+        "accumulated_resources": {
+          "food": 1
+        },
+        "available_from_round": 1
+      }
+    },
+    "round_cards": [
+      {
+        "round": 1,
+        "action_space": "sheep",
+        "revealed": false
+      },
+      {
+        "round": 2,
+        "action_space": "fencing",
+        "revealed": false
+      }
+    ],
+    "major_improvements_supply": [
+      {
+        "name": "Fireplace (2 players)",
+        "available": true,
+        "cost": {
+          "clay": 2
+        }
+      },
+      {
+        "name": "Fireplace (3+ players)",
+        "available": true,
+        "cost": {
+          "clay": 3
+        }
+      },
+      {
+        "name": "Cooking Hearth (2 players)",
+        "available": true,
+        "cost": {
+          "clay": 4
+        }
+      },
+      {
+        "name": "Cooking Hearth (3+ players)",
+        "available": true,
+        "cost": {
+          "clay": 5
+        }
+      }
+    ]
+  },
+  "harvest_track": {
+    "next_harvest": 4,
+    "harvest_rounds": [
+      4,
+      7,
+      9,
+      11,
+      13,
+      14
+    ]
+  },
+  "first_player_token": "human"
+}

@@ -1,0 +1,8 @@
+{
+  "phase": "setup",
+  "turn": 1,
+  "players": {
+    "human": {},
+    "ai": {}
+  }
+}
