@@ -130,13 +130,14 @@ class HiddenDealer:
                 dealing_notes=data.get("notes", ""),
             )
 
-        except json.JSONDecodeError:
-            # Fallback: empty hands
+        except json.JSONDecodeError as e:
+            # Fallback: empty hands - but log what went wrong
+            error_preview = response.content[:200] if response.content else "empty"
             return DealingResult(
                 ai_hidden={"hand": [], "dealt_by": "referee_fallback"},
                 human_hidden=human_declared,
                 remaining_deck=[],
-                dealing_notes="Dealing failed, using empty hand",
+                dealing_notes=f"JSON parse failed: {e}. Response: {error_preview}...",
             )
 
     async def deal_from_deck(
