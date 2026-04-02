@@ -71,6 +71,22 @@ class GameLoop:
         """Check if it's the AI's turn."""
         return self.current_player == self.ai_player
 
+    def set_client(self, client: LLMClient) -> None:
+        """Change the LLM client for all roles.
+
+        Args:
+            client: New LLM client to use.
+        """
+        self.client = client
+        self.rules_interpreter = RulesInterpreter(client, self.game_name)
+        self.strategist = Strategist(client, self.game_name)
+        self.referee = Referee(client, self.game_name)
+
+        # Re-set rules index if we have one
+        if hasattr(self, '_rules_index') and self._rules_index:
+            self.rules_interpreter.set_rules_index(self._rules_index)
+            self.referee.rules_index = self._rules_index
+
     def set_rules(self, rules_text: str) -> None:
         """Set the rules text for the game.
 
@@ -85,6 +101,7 @@ class GameLoop:
         Args:
             rules_index: RulesIndex instance.
         """
+        self._rules_index = rules_index  # Store for set_client
         self.rules_interpreter.set_rules_index(rules_index)
         self.referee.rules_index = rules_index
 

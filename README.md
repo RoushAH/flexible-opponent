@@ -22,14 +22,20 @@ cd flexible-opponent
 # Install
 pip install -e .
 
-# Set your API key
-export ANTHROPIC_API_KEY=your_key_here
+# Set your API key (depending on provider)
+export ANTHROPIC_API_KEY=your_key_here  # For Anthropic direct
+# Or for AWS Bedrock, configure AWS credentials
+# Or for OpenAI: export OPENAI_API_KEY=your_key_here
+# Or for Ollama: no key needed (local)
 ```
 
 ### Starting a Game
 
 ```bash
 opponent
+
+# Or if the command isn't found:
+python -m src.controller.cli
 ```
 
 The CLI walks you through setup:
@@ -73,6 +79,7 @@ Move recorded.
 | `/moves [n]` | Show last n moves (default 5) |
 | `/strategy` | Show AI's current strategy |
 | `/rules <query>` | Search rules (e.g., `/rules harvesting`) |
+| `/model` | Change LLM provider/model mid-game |
 | `/recover` | Resync state from a photo |
 | `/games` | List previous games for replay |
 | `/endgame` | End game and write postmortem |
@@ -243,8 +250,12 @@ These notes are loaded into context when replaying the same game.
 ## Requirements
 
 - Python 3.11+
-- Anthropic API key (Claude)
-- Dependencies: `anthropic`, `chromadb`, `pypdf`, `pydantic`
+- One of the following LLM providers:
+  - **Anthropic** (direct API) - requires `ANTHROPIC_API_KEY`
+  - **AWS Bedrock** - requires AWS credentials configured
+  - **OpenAI** - requires `OPENAI_API_KEY`
+  - **Ollama** - local models, no API key needed
+- Dependencies: `anthropic`, `chromadb`, `pypdf`, `pydantic`, `openai`, `httpx`
 
 ---
 

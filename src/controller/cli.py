@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from ..engine.state_manager import StateManager, create_session, load_session
-from ..llm.client import create_client
+from ..llm.client import create_client, list_providers, get_provider, PROVIDERS
 from .game_loop import GameLoop
 
 
@@ -19,6 +19,8 @@ class CLI:
         self.state_manager: StateManager | None = None
         self.rules_index = None  # RulesIndex instance
         self._running = True
+        self._current_provider = "anthropic"
+        self._current_model = None
 
     def print(self, message: str) -> None:
         """Print a message to the console."""
@@ -37,6 +39,7 @@ Commands:
   /moves [n]       - Show last n moves (default 5)
   /strategy        - Show AI's current strategy
   /rules <query>   - Search rules for a topic
+  /model           - Change LLM provider/model
   /recover         - Resync state from a photo
   /games           - List previous games (for replay)
   /endgame         - End game and write postmortem
@@ -79,13 +82,41 @@ During play:
         else:
             player_order = [ai_name, human_name]
 
-        # Create LLM client
-        self.print("\nConnecting to AI...")
+        # Create LLM client - allow provider selection
+        self.print("\nLLM Provider setup:")
+        providers = list_providers()
+        for i, p in enumerate(providers, 1):
+            self.print(f"  {i}. {p.display_name}")
+
+        provider_choice = input(f"Choose provider (1-{len(providers)}) [1]: ").strip()
+        if provider_choice.isdigit() and 1 <= int(provider_choice) <= len(providers):
+            chosen_provider = providers[int(provider_choice) - 1]
+        else:
+            chosen_provider = providers[0]  # Default to first (Anthropic)
+
+        self._current_provider = chosen_provider.name
+
+        # Show available models for this provider
+        self.print(f"\nAvailable models for {chosen_provider.display_name}:")
+        for i, m in enumerate(chosen_provider.available_models, 1):
+            default_marker = " (default)" if m == chosen_provider.default_model else ""
+            self.print(f"  {i}. {m}{default_marker}")
+
+        model_choice = input(f"Choose model (1-{len(chosen_provider.available_models)}) [1]: ").strip()
+        if model_choice.isdigit() and 1 <= int(model_choice) <= len(chosen_provider.available_models):
+            chosen_model = chosen_provider.available_models[int(model_choice) - 1]
+        else:
+            chosen_model = chosen_provider.default_model
+
+        self._current_model = chosen_model
+
+        self.print(f"\nConnecting to {chosen_provider.display_name} ({chosen_model})...")
         try:
-            client = create_client()
+            client = create_client(provider=self._current_provider, model=chosen_model)
         except Exception as e:
             self.print(f"Failed to create LLM client: {e}")
-            self.print("Make sure ANTHROPIC_API_KEY is set")
+            if chosen_provider.requires_env:
+                self.print(f"Make sure these are set: {', '.join(chosen_provider.requires_env)}")
             return False
 
         # Create game loop
@@ -365,6 +396,9 @@ During play:
 
             list_available_games()
 
+        elif cmd == "model":
+            await self.handle_model_change()
+
         elif cmd == "endgame":
             if self.state_manager and self.game_loop:
                 from ..strategy.postmortem import write_postmortem_interactive
@@ -382,6 +416,56 @@ During play:
         else:
             self.print(f"Unknown command: {cmd}")
             self.print("Type /help for available commands")
+
+    async def handle_model_change(self) -> None:
+        """Handle the /model command to change LLM provider/model."""
+        self.print(f"\nCurrent: {self._current_provider} / {self._current_model}")
+        self.print("\nAvailable providers:")
+
+        providers = list_providers()
+        for i, p in enumerate(providers, 1):
+            marker = " *" if p.name == self._current_provider else ""
+            self.print(f"  {i}. {p.display_name}{marker}")
+
+        self.print(f"\n  0. Keep current ({self._current_provider})")
+
+        provider_choice = input("Choose provider: ").strip()
+
+        if not provider_choice or provider_choice == "0":
+            self.print("Keeping current model")
+            return
+
+        if not provider_choice.isdigit() or not (1 <= int(provider_choice) <= len(providers)):
+            self.print("Invalid choice")
+            return
+
+        chosen_provider = providers[int(provider_choice) - 1]
+
+        # Show models
+        self.print(f"\nModels for {chosen_provider.display_name}:")
+        for i, m in enumerate(chosen_provider.available_models, 1):
+            default_marker = " (default)" if m == chosen_provider.default_model else ""
+            self.print(f"  {i}. {m}{default_marker}")
+
+        model_choice = input(f"Choose model (1-{len(chosen_provider.available_models)}) [1]: ").strip()
+        if model_choice.isdigit() and 1 <= int(model_choice) <= len(chosen_provider.available_models):
+            chosen_model = chosen_provider.available_models[int(model_choice) - 1]
+        else:
+            chosen_model = chosen_provider.default_model
+
+        # Create new client and swap it
+        self.print(f"\nSwitching to {chosen_provider.display_name} ({chosen_model})...")
+        try:
+            new_client = create_client(provider=chosen_provider.name, model=chosen_model)
+            if self.game_loop:
+                self.game_loop.set_client(new_client)
+            self._current_provider = chosen_provider.name
+            self._current_model = chosen_model
+            self.print("Model switched successfully!")
+        except Exception as e:
+            self.print(f"Failed to switch: {e}")
+            if chosen_provider.requires_env:
+                self.print(f"Make sure these are set: {', '.join(chosen_provider.requires_env)}")
 
 
 async def async_main() -> None:

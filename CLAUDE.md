@@ -22,6 +22,10 @@ opponent
 
 # Run tests
 pytest
+
+# Run a single test
+pytest tests/test_foo.py::test_specific_function
+pytest -k "test_name"  # match by name
 ```
 
 ## Architecture
@@ -39,6 +43,22 @@ Each role gets isolated context to prevent information leakage:
 - **Referee**: Full knowledge, validates legality, deals hidden cards
 - **Rules Interpreter**: Lists plausible legal moves with confidence levels
 - **AI Strategist**: Picks best move, manages hierarchical strategy
+
+### Code Patterns
+
+**Async everywhere**: All LLM calls are async. Use `await` and ensure callers are async.
+
+**Prompt templates**: Text files in `src/llm/prompts/`, loaded lazily via module-level functions like `_get_prompt_template()`.
+
+**JSON response parsing**: LLM responses often come wrapped in markdown code fences. Use `LLMResponse.as_json()` which strips these automatically.
+
+**Multi-provider support**: Four providers available via `create_client(provider=...)`:
+- `anthropic`: Direct Anthropic API (requires `ANTHROPIC_API_KEY`)
+- `bedrock`: AWS Bedrock (uses AWS credentials)
+- `openai`: OpenAI API (requires `OPENAI_API_KEY`)
+- `ollama`: Local models via Ollama (no API key needed)
+
+Use `/model` in CLI to switch providers mid-game.
 
 ### Strategy System
 
@@ -115,6 +135,7 @@ Each session in `games/<game_name>_<timestamp>/`:
 - `/moves [n]` - Show last n moves (default 5)
 - `/strategy` - Show AI's current strategy
 - `/rules <query>` - Search indexed rules (e.g., `/rules harvesting`)
+- `/model` - Change LLM provider/model mid-game
 - `/recover` - Resync state from a photo
 - `/games` - List previous games (for replay)
 - `/endgame` - End game and write postmortem
