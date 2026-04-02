@@ -17,34 +17,27 @@ class DealingResult:
     dealing_notes: str
 
 
-DEALING_PROMPT = """You are setting up hidden information for a board game.
-
-GAME: {game_name}
+DEALING_PROMPT = """GAME: {game_name}
 
 RULES FOR DEALING/SETUP:
 {rules_text}
 
-HUMAN PLAYER HAS DECLARED THESE ITEMS:
+HUMAN PLAYER HAS THESE ITEMS:
 {human_declared}
 
-FULL POOL/DECK AVAILABLE:
+FULL POOL/DECK:
 {full_pool}
 
-Based on the rules, determine:
-1. What items should the AI player receive?
-2. How many items does each player get?
-3. Are there any special dealing rules (draft, choose, random)?
+Deal items to the AI player. If random dealing, select from items NOT in human's hand.
+Match the number of items the human has.
 
-If the rules specify random dealing, randomly select from items NOT in the human's hand.
-If the rules allow choice, select good but not overpowered items for the AI.
-
-Return ONLY valid JSON:
+RESPOND WITH ONLY THIS JSON (no other text):
 {{
-  "ai_items": ["list", "of", "items", "for", "ai"],
-  "dealing_method": "random|draft|choice|fixed",
+  "ai_items": ["item1", "item2", "item3"],
+  "dealing_method": "random",
   "items_per_player": 7,
-  "remaining_pool": ["items", "not", "dealt"],
-  "notes": "Brief explanation of dealing rules applied"
+  "remaining_pool": [],
+  "notes": "brief note"
 }}"""
 
 
@@ -108,14 +101,26 @@ class HiddenDealer:
         )
 
         response = await self.client.complete(
-            system_prompt="You are a fair card dealer. Return only valid JSON.",
+            system_prompt="You are a card dealer. Respond with ONLY valid JSON, no other text.",
             user_prompt=prompt,
             temperature=0.7,  # Some randomness for dealing
         )
 
+        # Try to parse JSON, with fallback to extract from text
+        data = None
         try:
             data = response.as_json()
+        except json.JSONDecodeError:
+            # Try to extract JSON from response if LLM added text around it
+            import re
+            json_match = re.search(r'\{[\s\S]*\}', response.content)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group())
+                except json.JSONDecodeError:
+                    pass
 
+        if data is not None:
             # Build AI's hidden state
             ai_hidden = {
                 "hand": data.get("ai_items", []),
@@ -129,15 +134,14 @@ class HiddenDealer:
                 remaining_deck=data.get("remaining_pool", []),
                 dealing_notes=data.get("notes", ""),
             )
-
-        except json.JSONDecodeError as e:
+        else:
             # Fallback: empty hands - but log what went wrong
             error_preview = response.content[:200] if response.content else "empty"
             return DealingResult(
                 ai_hidden={"hand": [], "dealt_by": "referee_fallback"},
                 human_hidden=human_declared,
                 remaining_deck=[],
-                dealing_notes=f"JSON parse failed: {e}. Response: {error_preview}...",
+                dealing_notes=f"Could not parse JSON. Response: {error_preview}...",
             )
 
     async def deal_from_deck(
