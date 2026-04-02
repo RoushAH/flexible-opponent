@@ -216,7 +216,7 @@ During play:
 
                 # Normalize player names before showing preview
                 normalized_state = self._normalize_player_names(
-                    proposal.example_state, human_name, ai_name
+                    proposal.example_state, human_name, ai_name, player_order
                 )
 
                 # Show what we generated
@@ -250,7 +250,7 @@ During play:
                         rules_text,
                     )
                     initial_state = self._normalize_player_names(
-                        refined.example_state, human_name, ai_name
+                        refined.example_state, human_name, ai_name, player_order
                     )
                     self.state_manager.save_schema(refined.schema)
                     self.print("Refined state applied")
@@ -294,10 +294,12 @@ During play:
         state: dict,
         human_name: str,
         ai_name: str,
+        player_order: list[str] | None = None,
     ) -> dict:
-        """Replace generic player names with actual names.
+        """Replace generic player names with actual names and fix turn order.
 
         Schema generator often uses 'player1'/'player2' - replace with real names.
+        Also sets correct turn_order and current_player based on who goes first.
         """
         import copy
         state = copy.deepcopy(state)
@@ -328,7 +330,14 @@ During play:
             else:
                 return obj
 
-        return replace_in_obj(state)
+        state = replace_in_obj(state)
+
+        # Fix turn order and current player if player_order provided
+        if player_order:
+            state["turn_order"] = player_order
+            state["current_player"] = player_order[0]
+
+        return state
 
     async def _setup_hidden_state(
         self,
